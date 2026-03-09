@@ -1,6 +1,5 @@
 import { getData } from "@/actions/todoActions";
 import Todos from "../components/todos";
-import { syncUser } from "@/actions/userActions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -11,15 +10,6 @@ export default async function Home() {
   if (!user) {
     redirect("/sign-in");
   }
-
-  // Sinkronisasi data Clerk ke Database Neon
-  const userName =
-    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-    user.username ||
-    "User";
-  const userEmail = user.emailAddresses[0]?.emailAddress || "";
-
-  await syncUser(user.id, userName, userEmail);
 
   // Ambil data todos milik user
   const data = await getData(user.id);
