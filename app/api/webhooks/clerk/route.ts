@@ -4,7 +4,7 @@ import { WebhookEvent } from '@clerk/nextjs/server'
 import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
@@ -74,10 +74,11 @@ export async function POST(req: NextRequest) {
               photo: image_url,
               updatedAt: new Date(),
           }).where(eq(users.clerkId, id));
+          return NextResponse.json({message:"user updated",existingUser});
       } else {
           // New user
-          await db.insert(users).values({
-              id: crypto.randomUUID(),
+          const newUser = {
+            id: crypto.randomUUID(),
               clerkId: id,
               name: name,
               email: email,
@@ -86,7 +87,9 @@ export async function POST(req: NextRequest) {
               photo: image_url,
               createdAt: new Date(),
               updatedAt: new Date(),
-          });
+          }
+          const newUserResult = await db.insert(users).values(newUser).returning({clerkClientId:users.clerkId});
+          return NextResponse.json({message:"new user created",newUserResult});
       }
   }
 
@@ -94,6 +97,7 @@ export async function POST(req: NextRequest) {
       const { id } = evt.data;
       if (id) {
           await db.delete(users).where(eq(users.clerkId, id));
+          return NextResponse.json({message:"user deleted",id});
       }
   }
 
